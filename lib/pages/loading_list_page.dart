@@ -31,6 +31,59 @@ class _LoadingListPageState extends State<LoadingListPage> {
   bool isLoading = false;
   int currentIndex = 0;
 
+  late final FormGroup form;
+
+  @override
+  void initState() {
+    super.initState();
+
+    form = FormGroup({
+      'isCustom': FormControl<bool>(value: false),
+      'name': FormControl<String>(),
+      'tc': FormControl<String>(),
+      'tel': FormControl<String>(),
+    });
+
+    // isCustom değişince validator’ları değiştir
+    final isCustomControl = form.control('isCustom');
+    final nameControl = form.control('name');
+    final tcControl = form.control('tc');
+    final telControl = form.control('tel');
+
+    isCustomControl.valueChanges.listen((isCustomValue) {
+      if (isCustomValue == true) {
+        nameControl.setValidators([Validators.required]);
+
+        telControl.setValidators([
+          Validators.pattern(
+            r'^(?:\+90.?5|0090.?5|905|0?5)(?:[01345][0-9])\s?(?:[0-9]{3})\s?(?:[0-9]{2})\s?(?:[0-9]{2})$',
+          ),
+        ]);
+
+        tcControl.setValidators([
+          Validators.number(allowNegatives: false, allowNull: false),
+          Validators.minLength(11),
+          Validators.maxLength(11),
+        ]);
+      } else {
+        nameControl.setValidators([]);
+        tcControl.setValidators([]);
+        telControl.setValidators([]);
+
+        // önceki hataları temizlemek için:
+        nameControl.setErrors({});
+        tcControl.setErrors({});
+        telControl.setErrors({});
+      }
+
+      // burada `updateValueAndValidity()` çağırmak artık güvenli,
+      // çünkü validator içinde değil
+      nameControl.updateValueAndValidity();
+      tcControl.updateValueAndValidity();
+      telControl.updateValueAndValidity();
+    });
+  }
+
   Future<void> saveList() async {
     final result = await context.read<RestApiService>().saveLoadingList(
       AppConstants.loadingForm.getLoadingListDTO(context),

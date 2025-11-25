@@ -19,41 +19,39 @@ class CustomTransporterValidator extends Validator<dynamic> {
   Map<String, dynamic>? validate(AbstractControl<dynamic> control) {
     final form = control as FormGroup;
 
-    final isCustomValue = form.control(isCustom).value;
-    final nameControl = form.control(name);
-    final tcControl = form.control(tc);
-    final telControl = form.control(tel);
-
-    if (isCustomValue == true) {
-      nameControl.setValidators([Validators.required]);
-      telControl.setValidators([
-        Validators.pattern(
-          r'^(?:\+90.?5|0090.?5|905|0?5)(?:[01345][0-9])\s?(?:[0-9]{3})\s?(?:[0-9]{2})\s?(?:[0-9]{2})$',
-        ),
-      ]);
-      tcControl.setValidators([
-        Validators.number(allowNegatives: false, allowNull: false),
-        Validators.minLength(11),
-        Validators.maxLength(11),
-      ]);
-    } else {
-      nameControl.setValidators([]);
-      telControl.setValidators([]);
-      tcControl.setValidators([]);
+    final isCustomValue = form.control(isCustom).value as bool? ?? false;
+    if (!isCustomValue) {
+      // custom değilse hiçbir hata yok
+      return null;
     }
 
-    // Validator'ları güncelledikten sonra validate et
-    // nameControl.updateValueAndValidity();
-    // telControl.updateValueAndValidity();
-    // tcControl.updateValueAndValidity();
+    final nameValue = (form.control(name).value ?? '').toString().trim();
+    final tcValue = (form.control(tc).value ?? '').toString();
+    final telValue = (form.control(tel).value ?? '').toString();
 
-    return null;
+    final errors = <String, dynamic>{};
+
+    if (nameValue.isEmpty) {
+      errors['nameRequired'] = true;
+    }
+
+    final tcReg = RegExp(r'^[0-9]{11}$');
+    if (!tcReg.hasMatch(tcValue)) {
+      errors['tcInvalid'] = true;
+    }
+
+    final telReg = RegExp(
+      r'^(?:\+90.?5|0090.?5|905|0?5)(?:[01345][0-9])\s?(?:[0-9]{3})\s?(?:[0-9]{2})\s?(?:[0-9]{2})$',
+    );
+    if (!telReg.hasMatch(telValue)) {
+      errors['telInvalid'] = true;
+    }
+
+    return errors.isEmpty ? null : {'customTransporter': errors};
   }
 }
 
 class AppConstants {
-  // static final cacheSheet = Excel.createExcel().sheets.values.first;
-  // static final ValueNotifier<Template?> selectedTemplate = ValueNotifier(null);
   static InputDecoration getTextFieldDecoration(
     String label,
     Color color, {
